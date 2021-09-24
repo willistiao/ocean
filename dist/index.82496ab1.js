@@ -474,14 +474,19 @@ class Sketch {
         this.renderer.setSize(this.width, this.height);
         this.container.appendChild(this.renderer.domElement);
         this.controls = new _orbitControlsJs.OrbitControls(this.camera, this.renderer.domElement);
+        this.resize();
         this.addObjects();
         this.render();
+    }
+    setupResize() {
+        window.addEventListener('resize', this.resize.bind(this));
     }
     resize() {
         this.width = this.container.offsetWidth;
         this.height = this.container.offsetHeight;
         this.renderer.setSize(this.width, this.height);
         this.camera.aspect = this.width / this.height;
+        this.camera.updateProjectionMatrix();
     }
     addObjects() {
         this.geometry = new _three.BoxGeometry(0.5, 0.5, 0.5);

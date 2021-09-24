@@ -20,8 +20,13 @@ export default class Sketch{
 
         this.controls = new OrbitControls( this.camera, this.renderer.domElement );
 
+        this.resize();
         this.addObjects();
         this.render();
+    }
+
+    setupResize(){
+        window.addEventListener('resize', this.resize.bind(this));
     }
 
     resize(){
@@ -29,6 +34,7 @@ export default class Sketch{
         this.height = this.container.offsetHeight;
         this.renderer.setSize( this.width, this.height );
         this.camera.aspect = this.width/this.height;
+        this.camera.updateProjectionMatrix();
 
     }
 

@@ -37453,8 +37453,10 @@ var Sketch = /*#__PURE__*/function () {
     this.scene = new THREE.Scene();
     this.width = this.container.offsetWidth;
     this.height = this.container.offsetHeight;
-    this.camera = new THREE.PerspectiveCamera(70, this.width / this.height, 0.01, 10);
-    this.camera.position.z = 1;
+    this.camera = new THREE.PerspectiveCamera(70, this.width / this.height, 100, 2000);
+    this.camera.position.z = 600; //make field of view to be exact to size
+
+    this.camera.fov = Math.atan(this.height / 2 / 600) * (180 / Math.PI);
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true
@@ -37462,11 +37464,17 @@ var Sketch = /*#__PURE__*/function () {
     this.renderer.setSize(this.width, this.height);
     this.container.appendChild(this.renderer.domElement);
     this.controls = new _OrbitControls.OrbitControls(this.camera, this.renderer.domElement);
+    this.resize();
     this.addObjects();
     this.render();
   }
 
   _createClass(Sketch, [{
+    key: "setupResize",
+    value: function setupResize() {
+      window.addEventListener('resize', this.resize.bind(this));
+    }
+  }, {
     key: "resize",
     value: function resize() {
       this.width = this.container.offsetWidth;
@@ -37478,7 +37486,7 @@ var Sketch = /*#__PURE__*/function () {
   }, {
     key: "addObjects",
     value: function addObjects() {
-      this.geometry = new THREE.PlaneBufferGeometry(0.5, 0.5, 10, 10);
+      this.geometry = new THREE.PlaneBufferGeometry(200, 400, 10, 10);
       this.material = new THREE.MeshNormalMaterial(); // including fragment and vertex shader asa material        
 
       this.material = new THREE.ShaderMaterial({
@@ -37515,7 +37523,7 @@ exports.default = Sketch;
 new Sketch({
   dom: document.getElementById('container')
 });
-},{"three":"node_modules/three/build/three.module.js","three/examples/jsm/controls/OrbitControls.js":"node_modules/three/examples/jsm/controls/OrbitControls.js","./shaders/fragment.glsl":"js/shaders/fragment.glsl","./shaders/vertex.glsl":"js/shaders/vertex.glsl"}],"../../../AppData/Roaming/npm/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"three":"node_modules/three/build/three.module.js","three/examples/jsm/controls/OrbitControls.js":"node_modules/three/examples/jsm/controls/OrbitControls.js","./shaders/fragment.glsl":"js/shaders/fragment.glsl","./shaders/vertex.glsl":"js/shaders/vertex.glsl"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -37543,7 +37551,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49386" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54410" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
@@ -37719,5 +37727,5 @@ function hmrAcceptRun(bundle, id) {
     return true;
   }
 }
-},{}]},{},["../../../AppData/Roaming/npm/node_modules/parcel-bundler/src/builtins/hmr-runtime.js","js/app.js"], null)
+},{}]},{},["node_modules/parcel-bundler/src/builtins/hmr-runtime.js","js/app.js"], null)
 //# sourceMappingURL=/app.c3f9f951.js.map

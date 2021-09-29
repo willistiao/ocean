@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import imagesLoaded from 'imagesloaded';
 import FontFaceObserver from 'fontfaceobserver';
 import Scroll from './scroll';
+import gsap from 'gsap';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import fragment from './shaders/fragment.glsl';
 import vertex from './shaders/vertex.glsl';
@@ -52,12 +53,17 @@ export default class Sketch{
         let allDone = [fontOpen,fontPlayfair,preloadImages]
         this.currentScroll = 0;
 
+        // mouse over ray caster
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
+
         // runs after everything is loaded
         Promise.all(allDone).then(()=>{
             this.scroll = new Scroll();
             this.addImages();
             this.setPosition();
 
+            this.mouseMovement();
             this.resize();
             this.setupResize();
             // this.addObjects();
@@ -70,6 +76,29 @@ export default class Sketch{
 
 
     }
+
+    mouseMovement(){
+        
+        window.addEventListener( 'mousemove', (event)=>{
+            this.mouse.x = ( event.clientX / this.width ) * 2 - 1;
+	        this.mouse.y = - ( event.clientY / this.height ) * 2 + 1;
+
+            // update the picking ray with the camera and mouse position
+	        this.raycaster.setFromCamera( this.mouse, this.camera );
+
+	        // calculate objects intersecting the picking ray
+	        const intersects = this.raycaster.intersectObjects( this.scene.children );
+
+            if(intersects.length>0){
+                // console.log(intersects[0]);
+                let obj = intersects[0].object;
+                obj.material.uniforms.hover.value = intersects[0].uv;
+            }
+
+        }, false );
+    }
+
+
 
     setupResize(){
         window.addEventListener('resize', this.resize.bind(this));
@@ -85,16 +114,54 @@ export default class Sketch{
     }
 
     addImages(){
+        this.material = new THREE.ShaderMaterial({
+            uniforms:{
+                time: {value:0},
+                uImage: {value:0},
+                hover: {value: new THREE.Vector2(0.5,0.5)},
+                hoverState: {value: 0},
+
+            },
+
+            side: THREE.DoubleSide,
+            fragmentShader: fragment,
+            vertexShader: vertex,
+            // wireframe: true
+        });
+
+        this.materials = []
+
         this.imageStore = this.images.map(img=>{
             let bounds = img.getBoundingClientRect()
 
-            let geometry = new THREE.PlaneBufferGeometry(bounds.width,bounds.height,1,1);
+            let geometry = new THREE.PlaneBufferGeometry(bounds.width,bounds.height,10,10);
             let texture = new THREE.Texture(img);
             texture.needsUpdate = true;
-            let material = new THREE.MeshBasicMaterial({
-                // color: 0xff0000,
-                map: texture
-            });
+            // let material = new THREE.MeshBasicMaterial({
+            //     // color: 0xff0000,
+            //     map: texture
+            // });
+
+            let material = this.material.clone();
+
+            img.addEventListener('mouseenter',()=>{
+                gsap.to(material.uniforms.hoverState,{
+                    duration:1,
+                    value:1,
+                    ease: "power3.out"
+                })
+            })
+            img.addEventListener('mouseout',()=>{
+                gsap.to(material.uniforms.hoverState,{
+                    duration:1,
+                    value:0,
+                    ease: "power3.out"
+                })
+            })
+
+            material.uniforms.uImage.value = texture;
+
+            this.materials.push(material)
 
             let mesh = new THREE.Mesh(geometry,material);
 
@@ -128,16 +195,6 @@ export default class Sketch{
         this.material = new THREE.MeshNormalMaterial();
         
         // including fragment and vertex shader asa material        
-        this.material = new THREE.ShaderMaterial({
-            uniforms:{
-                time: {value:0}
-            },
-
-            side: THREE.DoubleSide,
-            fragmentShader: fragment,
-            vertexShader: vertex,
-            wireframe: true
-        });
         
         this.mesh = new THREE.Mesh( this.geometry, this.material );
         this.scene.add( this.mesh );
@@ -150,11 +207,14 @@ export default class Sketch{
         this.scroll.render();
         this.currentScroll = this.scroll.scrollToRender;
         this.setPosition();
-        // this.mesh.rotation.x = this.time / 2000;
-        // this.mesh.rotation.y = this.time / 1000;
-    
+
         // //get time value uniform from this.material
         // this.material.uniforms.time.value = this.time;
+
+        // runs time in all materials
+        this.materials.forEach(m=>{
+            m.uniforms.time.value = this.time;
+        })
 
         this.renderer.render( this.scene, this.camera );
 

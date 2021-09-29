@@ -37040,6 +37040,128 @@ b)}else m(function(){function v(){var b;if(b=-1!=f&&-1!=g||-1!=f&&-1!=h||-1!=g&&
 n+"ms timeout exceeded"));else{var a=document.hidden;if(!0===a||void 0===a)f=e.a.offsetWidth,g=p.a.offsetWidth,h=q.a.offsetWidth,v();r=setTimeout(I,50)}}var e=new t(k),p=new t(k),q=new t(k),f=-1,g=-1,h=-1,w=-1,x=-1,y=-1,d=document.createElement("div");d.dir="ltr";u(e,L(c,"sans-serif"));u(p,L(c,"serif"));u(q,L(c,"monospace"));d.appendChild(e.a);d.appendChild(p.a);d.appendChild(q.a);document.body.appendChild(d);w=e.a.offsetWidth;x=p.a.offsetWidth;y=q.a.offsetWidth;I();A(e,function(a){f=a;v()});u(e,
 L(c,'"'+c.family+'",sans-serif'));A(p,function(a){g=a;v()});u(p,L(c,'"'+c.family+'",serif'));A(q,function(a){h=a;v()});u(q,L(c,'"'+c.family+'",monospace'))})})};"object"===typeof module?module.exports=B:(window.FontFaceObserver=B,window.FontFaceObserver.prototype.load=B.prototype.load);}());
 
+},{}],"js/scroll.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+var lerp = function lerp(a, b, n) {
+  return (1 - n) * a + n * b;
+};
+
+var Scroll = /*#__PURE__*/function () {
+  function Scroll() {
+    var _this = this;
+
+    _classCallCheck(this, Scroll);
+
+    this.DOM = {
+      main: document.querySelector("main")
+    }; // the scrollable element
+    // we translate this element when scrolling (y-axis)
+
+    this.DOM.scrollable = this.DOM.main.querySelector("div[data-scroll]");
+    this.docScroll = 0;
+    this.scrollToRender = 0;
+    this.current = 0;
+    this.ease = 0.1;
+    this.speed = 0;
+    this.speedTarget = 0; // set the body's height
+
+    this.setSize(); // set the initial values
+
+    this.getScroll();
+    this.init(); // the <main> element's style needs to be modified
+
+    this.style(); // init/bind events
+
+    this.initEvents(); // start the render loop
+
+    requestAnimationFrame(function () {
+      return _this.render();
+    });
+  }
+
+  _createClass(Scroll, [{
+    key: "init",
+    value: function init() {
+      // sets the initial value (no interpolation) - translate the scroll value
+      for (var key in this.renderedStyles) {
+        this.current = this.scrollToRender = this.getScroll();
+      } // translate the scrollable element
+
+
+      this.setPosition();
+      this.shouldRender = true;
+    }
+  }, {
+    key: "style",
+    value: function style() {
+      this.DOM.main.style.position = "fixed";
+      this.DOM.main.style.width = this.DOM.main.style.height = "100%";
+      this.DOM.main.style.top = this.DOM.main.style.left = 0;
+      this.DOM.main.style.overflow = "hidden";
+    }
+  }, {
+    key: "getScroll",
+    value: function getScroll() {
+      this.docScroll = window.pageYOffset || document.documentElement.scrollTop;
+      return this.docScroll;
+    }
+  }, {
+    key: "initEvents",
+    value: function initEvents() {
+      var _this2 = this;
+
+      window.onbeforeunload = function () {
+        window.scrollTo(0, 0);
+      }; // on resize reset the body's height
+
+
+      window.addEventListener("resize", function () {
+        return _this2.setSize();
+      });
+      window.addEventListener("scroll", this.getScroll.bind(this));
+    }
+  }, {
+    key: "setSize",
+    value: function setSize() {
+      // set the heigh of the body in order to keep the scrollbar on the page
+      document.body.style.height = "".concat(this.DOM.scrollable.scrollHeight, "px");
+    }
+  }, {
+    key: "setPosition",
+    value: function setPosition() {
+      // translates the scrollable element
+      if (Math.round(this.scrollToRender) !== Math.round(this.current) || this.scrollToRender < 10) {
+        this.DOM.scrollable.style.transform = "translate3d(0,".concat(-1 * this.scrollToRender, "px,0)");
+      }
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      this.speed = Math.min(Math.abs(this.current - this.scrollToRender), 200) / 200;
+      this.speedTarget += (this.speed - this.speedTarget) * 0.2;
+      this.current = this.getScroll();
+      this.scrollToRender = lerp(this.scrollToRender, this.current, this.ease); // and translate the scrollable element
+
+      this.setPosition();
+    }
+  }]);
+
+  return Scroll;
+}();
+
+exports.default = Scroll;
 },{}],"node_modules/three/examples/jsm/controls/OrbitControls.js":[function(require,module,exports) {
 "use strict";
 
@@ -37936,6 +38058,8 @@ var _imagesloaded = _interopRequireDefault(require("imagesloaded"));
 
 var _fontfaceobserver = _interopRequireDefault(require("fontfaceobserver"));
 
+var _scroll = _interopRequireDefault(require("./scroll"));
+
 var _OrbitControls = require("three/examples/jsm/controls/OrbitControls.js");
 
 var _fragment = _interopRequireDefault(require("./shaders/fragment.glsl"));
@@ -38005,18 +38129,25 @@ var Sketch = /*#__PURE__*/function () {
       }, resolve);
     });
     var allDone = [fontOpen, fontPlayfair, preloadImages];
+    this.currentScroll = 0; // runs after everything is loaded
+
     Promise.all(allDone).then(function () {
+      _this.scroll = new _scroll.default();
+
       _this.addImages();
 
       _this.setPosition();
 
       _this.resize();
 
-      _this.setupResize();
+      _this.setupResize(); // this.addObjects();
 
-      _this.addObjects();
 
-      _this.render();
+      _this.render(); // window.addEventListener('scroll',()=>{
+      //     this.currentScroll = window.scrollY;
+      //     this.setPosition();
+      // })
+
     });
   }
 
@@ -38070,7 +38201,7 @@ var Sketch = /*#__PURE__*/function () {
       var _this3 = this;
 
       this.imageStore.forEach(function (o) {
-        o.mesh.position.y = -o.top + _this3.height / 2 - o.height / 2;
+        o.mesh.position.y = _this3.currentScroll - o.top + _this3.height / 2 - o.height / 2;
         o.mesh.position.x = o.left - _this3.width / 2 + o.width / 2;
       });
     }
@@ -38098,10 +38229,13 @@ var Sketch = /*#__PURE__*/function () {
     key: "render",
     value: function render() {
       this.time += 0.05;
-      this.mesh.rotation.x = this.time / 2000;
-      this.mesh.rotation.y = this.time / 1000; //get time value uniform from this.material
+      this.scroll.render();
+      this.currentScroll = this.scroll.scrollToRender;
+      this.setPosition(); // this.mesh.rotation.x = this.time / 2000;
+      // this.mesh.rotation.y = this.time / 1000;
+      // //get time value uniform from this.material
+      // this.material.uniforms.time.value = this.time;
 
-      this.material.uniforms.time.value = this.time;
       this.renderer.render(this.scene, this.camera);
       window.requestAnimationFrame(this.render.bind(this));
     }
@@ -38114,7 +38248,7 @@ exports.default = Sketch;
 new Sketch({
   dom: document.getElementById('container')
 });
-},{"three":"node_modules/three/build/three.module.js","imagesloaded":"node_modules/imagesloaded/imagesloaded.js","fontfaceobserver":"node_modules/fontfaceobserver/fontfaceobserver.standalone.js","three/examples/jsm/controls/OrbitControls.js":"node_modules/three/examples/jsm/controls/OrbitControls.js","./shaders/fragment.glsl":"js/shaders/fragment.glsl","./shaders/vertex.glsl":"js/shaders/vertex.glsl"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"three":"node_modules/three/build/three.module.js","imagesloaded":"node_modules/imagesloaded/imagesloaded.js","fontfaceobserver":"node_modules/fontfaceobserver/fontfaceobserver.standalone.js","./scroll":"js/scroll.js","three/examples/jsm/controls/OrbitControls.js":"node_modules/three/examples/jsm/controls/OrbitControls.js","./shaders/fragment.glsl":"js/shaders/fragment.glsl","./shaders/vertex.glsl":"js/shaders/vertex.glsl"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;

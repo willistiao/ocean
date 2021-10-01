@@ -7,6 +7,11 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import fragment from './shaders/fragment.glsl';
 import vertex from './shaders/vertex.glsl';
 
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+
 
 export default class Sketch{
     constructor(options){
@@ -67,6 +72,8 @@ export default class Sketch{
             this.resize();
             this.setupResize();
             // this.addObjects();
+
+            this.composerPass();
             this.render();    
             // window.addEventListener('scroll',()=>{
             //     this.currentScroll = window.scrollY;
@@ -76,6 +83,48 @@ export default class Sketch{
 
 
     }
+
+    composerPass(){
+        this.composer = new EffectComposer(this.renderer);
+        this.renderPass = new RenderPass(this.scene, this.camera);
+        this.composer.addPass(this.renderPass);
+  
+        //custom shader pass
+        var counter = 0.0;
+        this.myEffect = {
+          uniforms: {
+            "tDiffuse": { value: null },
+            "scrollSpeed": { value: null },
+          },
+          vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix 
+              * modelViewMatrix 
+              * vec4( position, 1.0 );
+          }
+          `,
+          fragmentShader: `
+          uniform sampler2D tDiffuse;
+          varying vec2 vUv;
+          uniform float scrollSpeed;
+          void main(){
+            vec2 newUV = vUv;
+            float area = smoothstep(0.4,0.,vUv.y);
+            area = pow(area,4.);
+            newUV.x -= (vUv.x - 0.5)*0.1*area*scrollSpeed;
+            gl_FragColor = texture2D( tDiffuse, newUV);
+          //   gl_FragColor = vec4(area,0.,0.,1.);
+          }
+          `
+        }
+  
+        this.customPass = new ShaderPass(this.myEffect);
+        this.customPass.renderToScreen = true;
+  
+        this.composer.addPass(this.customPass);
+      }
 
     mouseMovement(){
         
@@ -211,13 +260,15 @@ export default class Sketch{
         // //get time value uniform from this.material
         // this.material.uniforms.time.value = this.time;
 
+        this.customPass.uniforms.scrollSpeed.value = this.scroll.speedTarget;
+
         // runs time in all materials
         this.materials.forEach(m=>{
             m.uniforms.time.value = this.time;
         })
 
-        this.renderer.render( this.scene, this.camera );
-
+        // this.renderer.render( this.scene, this.camera );
+        this.composer.render()
         window.requestAnimationFrame(this.render.bind(this));
     }
 }
